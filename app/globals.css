@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+
+body {
+  background-color: #faf4e8;
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(234, 161, 31, 0.10), transparent 38%),
+    radial-gradient(circle at 84% 78%, rgba(168, 64, 143, 0.08), transparent 42%),
+    radial-gradient(circle at 1px 1px, rgba(36, 26, 16, 0.05) 1px, transparent 0);
+  background-size: 100% 100%, 100% 100%, 22px 22px;
+}
+
+.label {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #9b8b73;
+}
+
+/* leave room for the fixed bottom nav, except on full-screen centered pages */
+main:not(.no-navpad) { padding-bottom: 96px; }
+
+.hairline { border-color: rgba(36, 26, 16, 0.16); }
+
+.card-hover { transition: transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s ease; }
+.card-hover:hover { transform: translateY(-4px) rotate(-0.4deg); box-shadow: 0 22px 44px -22px rgba(236,90,42,0.5); }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: #ec5a2a; border-radius: 8px; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp 0.5s ease both; }

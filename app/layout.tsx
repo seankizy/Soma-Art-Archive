@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import PWA from "@/components/PWA";
 import BottomNav from "@/components/BottomNav";
+import AuthGuard from "@/components/AuthGuard";
 
 export const metadata: Metadata = {
   title: "Soma Archive",
@@ -11,9 +12,7 @@ export const metadata: Metadata = {
 
 export const viewport = { themeColor: "#ec5a2a" };
 
-// These pages are personal, behind-login, and data-driven — render them on demand
-// rather than pre-rendering static HTML at build time. This prevents the build from
-// trying to create a Supabase client before env vars/data exist.
+// Personal, data-driven pages — render on demand, not prerendered at build time.
 export const dynamic = "force-dynamic";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -31,8 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-parchment text-ink font-body antialiased">
         <PWA />
-        {children}
-        <BottomNav />
+        <AuthGuard>
+          {children}
+          <BottomNav />
+        </AuthGuard>
       </body>
     </html>
   );

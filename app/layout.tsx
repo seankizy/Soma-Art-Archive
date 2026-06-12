@@ -1,20 +1,7 @@
 import type { Metadata } from "next";
-import { Fraunces, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import PWA from "@/components/PWA";
 import BottomNav from "@/components/BottomNav";
-
-const display = Fraunces({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  axes: ["SOFT", "WONK", "opsz"],
-  variable: "--font-display",
-});
-const body = Hanken_Grotesk({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-body",
-});
 
 export const metadata: Metadata = {
   title: "Soma Archive",
@@ -26,7 +13,17 @@ export const viewport = { themeColor: "#ec5a2a" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en">
+      <head>
+        {/* Fonts loaded at runtime via stylesheet so the build never depends on a
+            Google Fonts fetch (which can time out and silently kill the build). */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="bg-parchment text-ink font-body antialiased">
         <PWA />
         {children}

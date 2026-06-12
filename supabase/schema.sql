@@ -39,18 +39,29 @@ create table if not exists artworks (
 );
 
 -- Full-text search vector, kept in sync by a trigger.
-alter table artworks add column if not exists fts tsvector
-  generated always as (
-    to_tsvector('english'::regconfig,
-      coalesce(title,'') || ' ' ||
-      coalesce(artist,'') || ' ' ||
-      coalesce(medium,'') || ' ' ||
-      coalesce(location,'') || ' ' ||
-      coalesce(notes,'') || ' ' ||
-      coalesce(ai_description,'') || ' ' ||
-      coalesce(array_to_string(tags,' '),'')
-    )
-  ) stored;
+-- (A trigger is used instead of a GENERATED column because to_tsvector with a
+--  config is not treated as immutable inside generated columns.)
+alter table artworks add column if not exists fts tsvector;
+
+create or replace function artworks_fts_update() returns trigger as $$
+begin
+  new.fts :=
+    to_tsvector('english',
+      coalesce(new.title,'') || ' ' ||
+      coalesce(new.artist,'') || ' ' ||
+      coalesce(new.medium,'') || ' ' ||
+      coalesce(new.location,'') || ' ' ||
+      coalesce(new.notes,'') || ' ' ||
+      coalesce(new.ai_description,'') || ' ' ||
+      coalesce(array_to_string(new.tags,' '),'')
+    );
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists artworks_fts_trg on artworks;
+create trigger artworks_fts_trg before insert or update on artworks
+  for each row execute function artworks_fts_update();
 
 create index if not exists artworks_fts_idx on artworks using gin (fts);
 create index if not exists artworks_tags_idx on artworks using gin (tags);

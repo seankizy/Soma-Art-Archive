@@ -41,7 +41,7 @@ create table if not exists artworks (
 -- Full-text search vector, kept in sync by a trigger.
 alter table artworks add column if not exists fts tsvector
   generated always as (
-    to_tsvector('english',
+    to_tsvector('english'::regconfig,
       coalesce(title,'') || ' ' ||
       coalesce(artist,'') || ' ' ||
       coalesce(medium,'') || ' ' ||

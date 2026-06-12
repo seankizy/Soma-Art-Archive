@@ -11,6 +11,11 @@ export const metadata: Metadata = {
 
 export const viewport = { themeColor: "#ec5a2a" };
 
+// These pages are personal, behind-login, and data-driven — render them on demand
+// rather than pre-rendering static HTML at build time. This prevents the build from
+// trying to create a Supabase client before env vars/data exist.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

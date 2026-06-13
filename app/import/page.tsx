@@ -39,6 +39,9 @@ export default function ImportPage() {
   // raw AI result kept so changing the grouping slider re-clusters without another call
   const [idResult, setIdResult] = useState<any>(null);
   const [groups, setGroups] = useState<Group[]>([]);
+  // drag-to-regroup state: which photo is being dragged and from which group
+  const [dragging, setDragging] = useState<{ shotId: string; fromGroup: number } | null>(null);
+  const [dropTarget, setDropTarget] = useState<number | null>(null);
 
   useEffect(() => { fetchCollections().then(setCollections); }, []);
 
@@ -105,6 +108,10 @@ export default function ImportPage() {
     const cardData: Record<string, any> = Object.fromEntries(
       (out.items ?? []).filter((i: any) => i.type === "card").map((i: any) => [i.id, i.card ?? {}])
     );
+    // visual identification data per artwork id
+    const visualData: Record<string, any> = Object.fromEntries(
+      (out.items ?? []).filter((i: any) => i.type === "artwork" && i.visual).map((i: any) => [i.id, i.visual ?? {}])
+    );
     // best card per artwork id, from AI pairs
     const cardForArtwork: Record<string, { cardId: string; confidence: number }> = {};
     (out.pairs ?? []).forEach((pr: any) => {
@@ -140,11 +147,18 @@ export default function ImportPage() {
         }
       }
 
+      // Card data takes priority; fall back to visual AI identification for each field
+      const visual = ids.map((id) => visualData[id]).find(Boolean) ?? {};
+      const title = card?.title || visual?.title || "";
+      const artist = card?.artist || visual?.artist || "";
+      const year = card?.year || visual?.year || "";
+      const medium = card?.medium || visual?.medium || "";
+      const dimensions = card?.dimensions || "";
+
       newGroups.push({
         artworkIds: ids, cardId,
         coverIndex: 0,
-        title: card?.title || "", artist: card?.artist || "", year: card?.year || "",
-        medium: card?.medium || "", dimensions: card?.dimensions || "",
+        title, artist, year, medium, dimensions,
         tags: "", location, collection_id: "", geo,
       });
     }
@@ -172,6 +186,21 @@ export default function ImportPage() {
 
   function editGroup(i: number, k: keyof Group, v: string | number) {
     setGroups((g) => g.map((x, idx) => (idx === i ? { ...x, [k]: v } : x)));
+  }
+
+  // Move a photo from one group to another via drag-and-drop.
+  function moveToGroup(shotId: string, fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    setGroups((gs) => {
+      const next = gs.map((g) => ({ ...g, artworkIds: [...g.artworkIds] }));
+      // remove from source
+      next[fromIdx].artworkIds = next[fromIdx].artworkIds.filter((id) => id !== shotId);
+      next[fromIdx].coverIndex = Math.min(next[fromIdx].coverIndex, Math.max(0, next[fromIdx].artworkIds.length - 1));
+      // add to target
+      next[toIdx].artworkIds = [...next[toIdx].artworkIds, shotId];
+      // remove empty groups (only if source had >1 photo)
+      return next.filter((g) => g.artworkIds.length > 0 || g.cardId);
+    });
   }
   // split a multi-photo group into one work per photo
   function splitGroup(i: number) {
@@ -272,15 +301,26 @@ export default function ImportPage() {
               const arts = g.artworkIds.map((id) => shots.find((s) => s.id === id)).filter(Boolean) as Shot[];
               const card = shots.find((s) => s.id === g.cardId);
               return (
-                <div key={i} className="border hairline rounded-sm p-4">
+                <div key={i} className={`border rounded-sm p-4 transition ${dropTarget === i && dragging?.fromGroup !== i ? "border-rust bg-rust/5" : "hairline"}`}
+                  onDragOver={(e) => { e.preventDefault(); setDropTarget(i); }}
+                  onDragLeave={() => setDropTarget(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragging) moveToGroup(dragging.shotId, dragging.fromGroup, i);
+                    setDragging(null); setDropTarget(null);
+                  }}
+                >
                   <div className="flex gap-4">
                     <div className="flex gap-2 shrink-0 flex-wrap max-w-[230px]">
                       {arts.map((a, n) => (
                         <div
                           key={a.id}
-                          className="relative cursor-pointer group"
+                          className="relative cursor-grab active:cursor-grabbing group"
+                          draggable
+                          onDragStart={() => setDragging({ shotId: a.id, fromGroup: i })}
+                          onDragEnd={() => { setDragging(null); setDropTarget(null); }}
                           onClick={() => editGroup(i, "coverIndex", n as any)}
-                          title={n === g.coverIndex ? "Cover photo" : "Tap to set as cover"}
+                          title={n === g.coverIndex ? "Cover photo" : "Tap to set as cover — drag to move to another work"}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={a.url} alt="" className={`w-20 h-20 object-cover rounded-sm transition ${n === g.coverIndex ? "ring-2 ring-rust" : "opacity-70 hover:opacity-100"}`} />

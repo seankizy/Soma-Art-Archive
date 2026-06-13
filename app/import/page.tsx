@@ -319,14 +319,15 @@ export default function ImportPage() {
                           draggable
                           onDragStart={() => setDragging({ shotId: a.id, fromGroup: i })}
                           onDragEnd={() => { setDragging(null); setDropTarget(null); }}
-                          onClick={() => editGroup(i, "coverIndex", n as any)}
-                          title={n === g.coverIndex ? "Cover photo" : "Tap to set as cover — drag to move to another work"}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={a.url} alt="" className={`w-20 h-20 object-cover rounded-sm transition ${n === g.coverIndex ? "ring-2 ring-rust" : "opacity-70 hover:opacity-100"}`} />
-                          {n === g.coverIndex && (
-                            <span className="absolute top-1 left-1 label bg-rust text-parchment px-1 rounded-sm">cover</span>
-                          )}
+                          <img src={a.url} alt="" className={`w-24 h-24 object-cover rounded-sm transition ${n === g.coverIndex ? "ring-2 ring-rust" : "opacity-70"}`} />
+                          {/* cover badge — tap to select */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); editGroup(i, "coverIndex", n as any); }}
+                            className={`absolute bottom-1 left-1 label px-1.5 py-0.5 rounded-sm text-parchment transition ${n === g.coverIndex ? "bg-rust" : "bg-ink/60 hover:bg-rust"}`}
+                            title="Set as cover photo"
+                          >{n === g.coverIndex ? "✦ cover" : "cover?"}</button>
                           {/* delete button */}
                           <button
                             onClick={(e) => {

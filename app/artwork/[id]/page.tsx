@@ -80,6 +80,8 @@ export default function ArtworkDetail({ params }: { params: { id: string } }) {
       dimensions: draft.dimensions ?? null, location: draft.location ?? null,
       notes: draft.notes ?? null, tags, collection_id: draft.collection_id || null,
       sources: draft.sources ?? art.sources ?? [],
+      image_path: draft.image_path ?? art.image_path,
+      images: draft.images ?? art.images,
     };
     const { data, error } = await supabase.from("artworks").update(patch).eq("id", art.id).select().single();
     setSaving(false);
@@ -142,6 +144,38 @@ export default function ArtworkDetail({ params }: { params: { id: string } }) {
         <div>
           {editing ? (
             <div className="space-y-4">
+              {/* Image management in edit mode */}
+              {gallery.length > 0 && (
+                <div>
+                  <span className="label">photos — tap to set cover, × to remove</span>
+                  <div className="flex gap-2 flex-wrap mt-2">
+                    {gallery.map((p) => {
+                      const draftImages = draft.images ?? art.images ?? [];
+                      const draftCover = draft.image_path ?? art.image_path;
+                      const isCover = p === draftCover;
+                      return (
+                        <div key={p} className="relative group cursor-pointer"
+                          onClick={() => setD("image_path", p)}
+                          title={isCover ? "Cover photo" : "Tap to set as cover"}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={imageUrl(p)!} alt="" className={`w-20 h-20 object-cover rounded-sm transition ${isCover ? "ring-2 ring-rust" : "opacity-60 hover:opacity-100"}`} />
+                          {isCover && <span className="absolute top-1 left-1 label bg-rust text-parchment px-1 rounded-sm">cover</span>}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newImages = draftImages.filter((x: string) => x !== p);
+                              const newCover = isCover ? (newImages[0] ?? null) : draftCover;
+                              setD("images", newImages);
+                              setD("image_path", newCover);
+                            }}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-ink/80 text-parchment text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-rust"
+                            title="Remove photo">×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div><span className="label">title</span>
                 <input className={`${field} font-display text-2xl`} value={draft.title ?? ""} onChange={(e) => setD("title", e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-4">

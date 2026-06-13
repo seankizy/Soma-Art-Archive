@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Haiku 4.5 is multimodal and cheap. For tougher label OCR, swap to claude-opus-4-8.
-const MODEL = "claude-haiku-4-5-20251001";
+// Sonnet reads name cards more accurately than Haiku — worth the small extra cost.
+const MODEL = "claude-sonnet-4-6";
 
 type ImgIn = { id: string; mediaType: string; data: string }; // data = base64, no prefix
 

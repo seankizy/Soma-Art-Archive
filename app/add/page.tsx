@@ -22,6 +22,23 @@ export default function AddPage() {
   const [busy, setBusy] = useState(false);
   const [enriching, setEnriching] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  async function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files?.[0] ?? null;
+    if (!f || !f.type.startsWith("image/")) return;
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+    const g = await gpsFromImage(f);
+    if (g) {
+      setGeo(g);
+      setGeoSource("from photo");
+      const name = await placeName(g);
+      if (name && !form.location) set("location", name);
+    }
+  }
 
   async function suggestTags() {
     if (!file) return alert("Add a photo first.");
@@ -131,12 +148,22 @@ export default function AddPage() {
       <div className="space-y-6">
         <label className="block cursor-pointer">
           <span className="label">image</span>
-          <div className="mt-2 aspect-[4/3] border hairline border-dashed rounded-sm flex items-center justify-center bg-parchmentDk/40 overflow-hidden">
+          <div
+            className={`mt-2 aspect-[4/3] border border-dashed rounded-sm flex items-center justify-center bg-parchmentDk/40 overflow-hidden transition-colors ${
+              dragOver ? "border-rust bg-rust/5" : "hairline"
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragEnter={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+          >
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={preview} alt="preview" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-faded text-sm">tap to add a photo (auto-compressed)</span>
+              <span className="text-faded text-sm">
+                {dragOver ? "drop to add photo" : "tap or drag a photo here"}
+              </span>
             )}
           </div>
           <input type="file" accept="image/*" onChange={onFile} className="hidden" />

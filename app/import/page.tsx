@@ -22,6 +22,7 @@ type Shot = {
 type Group = {
   artworkIds: string[];
   cardId: string | null;
+  coverIndex: number; // index into artworkIds for the cover photo
   title: string; artist: string; year: string; medium: string; dimensions: string;
   tags: string; location: string; collection_id: string;
   geo: Geo | null;
@@ -127,6 +128,7 @@ export default function ImportPage() {
 
       newGroups.push({
         artworkIds: ids, cardId,
+        coverIndex: 0,
         title: card?.title || "", artist: card?.artist || "", year: card?.year || "",
         medium: card?.medium || "", dimensions: card?.dimensions || "",
         tags: "", location, collection_id: "", geo,
@@ -138,6 +140,7 @@ export default function ImportPage() {
       const card = cardData[c.id] ?? {};
       newGroups.push({
         artworkIds: [], cardId: c.id,
+        coverIndex: 0,
         title: card.title || "", artist: card.artist || "", year: card.year || "",
         medium: card.medium || "", dimensions: card.dimensions || "",
         tags: "", location: "", collection_id: "", geo: null,
@@ -153,7 +156,7 @@ export default function ImportPage() {
     if (idResult) buildGroups(shots, idResult, p);
   }
 
-  function editGroup(i: number, k: keyof Group, v: string) {
+  function editGroup(i: number, k: keyof Group, v: string | number) {
     setGroups((g) => g.map((x, idx) => (idx === i ? { ...x, [k]: v } : x)));
   }
   // split a multi-photo group into one work per photo
@@ -186,6 +189,7 @@ export default function ImportPage() {
       const artPaths = (await Promise.all(g.artworkIds.map(uploadShot))).filter(Boolean) as string[];
       const cardPath = await uploadShot(g.cardId);
       const images = [...artPaths, cardPath].filter(Boolean) as string[];
+      const coverPath = artPaths[g.coverIndex] ?? artPaths[0] ?? cardPath;
       await supabase.from("artworks").insert({
         title: g.title || "Untitled",
         artist: g.artist || null, year: g.year || null, medium: g.medium || null,
@@ -193,7 +197,7 @@ export default function ImportPage() {
         latitude: g.geo?.latitude ?? null, longitude: g.geo?.longitude ?? null,
         tags: g.tags.split(",").map((t) => t.trim()).filter(Boolean),
         collection_id: g.collection_id || null,
-        image_path: artPaths[0] ?? cardPath, card_image_path: cardPath, images,
+        image_path: coverPath, card_image_path: cardPath, images,
       });
     }
     setBusy(false);
@@ -258,11 +262,16 @@ export default function ImportPage() {
                   <div className="flex gap-4">
                     <div className="flex gap-2 shrink-0 flex-wrap max-w-[230px]">
                       {arts.map((a, n) => (
-                        <div key={a.id} className="relative">
+                        <div
+                          key={a.id}
+                          className="relative cursor-pointer"
+                          onClick={() => editGroup(i, "coverIndex", n as any)}
+                          title={n === g.coverIndex ? "Cover photo" : "Tap to set as cover"}
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={a.url} alt="" className="w-20 h-20 object-cover rounded-sm" />
-                          {n === 0 && arts.length > 1 && (
-                            <span className="absolute top-1 left-1 label bg-ink/80 text-parchment px-1 rounded-sm">cover</span>
+                          <img src={a.url} alt="" className={`w-20 h-20 object-cover rounded-sm transition ${n === g.coverIndex ? "ring-2 ring-rust" : "opacity-70 hover:opacity-100"}`} />
+                          {n === g.coverIndex && (
+                            <span className="absolute top-1 left-1 label bg-rust text-parchment px-1 rounded-sm">cover</span>
                           )}
                         </div>
                       ))}

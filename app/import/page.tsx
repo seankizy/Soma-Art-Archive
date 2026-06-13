@@ -264,7 +264,7 @@ export default function ImportPage() {
                       {arts.map((a, n) => (
                         <div
                           key={a.id}
-                          className="relative cursor-pointer"
+                          className="relative cursor-pointer group"
                           onClick={() => editGroup(i, "coverIndex", n as any)}
                           title={n === g.coverIndex ? "Cover photo" : "Tap to set as cover"}
                         >
@@ -273,6 +273,20 @@ export default function ImportPage() {
                           {n === g.coverIndex && (
                             <span className="absolute top-1 left-1 label bg-rust text-parchment px-1 rounded-sm">cover</span>
                           )}
+                          {/* delete button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setGroups((gs) => gs.map((x, idx) => {
+                                if (idx !== i) return x;
+                                const newIds = x.artworkIds.filter((id) => id !== a.id);
+                                const newCover = Math.min(x.coverIndex, Math.max(0, newIds.length - 1));
+                                return { ...x, artworkIds: newIds, coverIndex: newCover };
+                              }));
+                            }}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-ink/80 text-parchment text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-rust"
+                            title="Remove this photo"
+                          >×</button>
                         </div>
                       ))}
                       {card && (

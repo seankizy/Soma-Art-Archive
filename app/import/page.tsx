@@ -62,12 +62,26 @@ export default function ImportPage() {
       const { mediaType, data } = await fileToBase64(small);
       return { id: s.id, mediaType, data };
     }));
-    const res = await fetch("/api/identify", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ images: payload }),
-    });
-    const out = await res.json();
-    if (out.error) { setBusy(false); setStatus("Identify failed: " + out.error); return; }
+
+    // Process in batches of 4 to stay well within the 60s timeout.
+    const BATCH = 4;
+    const allItems: any[] = [];
+    const allPairs: any[] = [];
+    for (let i = 0; i < payload.length; i += BATCH) {
+      const chunk = payload.slice(i, i + BATCH);
+      const batchNum = Math.floor(i / BATCH) + 1;
+      const totalBatches = Math.ceil(payload.length / BATCH);
+      setStatus(`Reading labels… (${batchNum} of ${totalBatches})`);
+      const res = await fetch("/api/identify", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images: chunk }),
+      });
+      const out = await res.json();
+      if (out.error) { setBusy(false); setStatus("Identify failed: " + out.error); return; }
+      allItems.push(...(out.items ?? []));
+      allPairs.push(...(out.pairs ?? []));
+    }
+    const out = { items: allItems, pairs: allPairs };
 
     const typed = shots.map((s) => {
       const it = out.items?.find((i: any) => i.id === s.id);

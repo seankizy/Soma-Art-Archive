@@ -67,7 +67,7 @@ export default function ImportPage() {
     }));
 
     // Process in batches of 4 to stay well within the 60s timeout.
-    const BATCH = 4;
+    const BATCH = 3;
     const allItems: any[] = [];
     const allPairs: any[] = [];
     for (let i = 0; i < payload.length; i += BATCH) {

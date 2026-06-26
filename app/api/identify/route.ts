@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // Sonnet for better visual recognition of artworks without name cards.
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-haiku-4-5-20251001";
 
 // Extend Vercel function timeout to 60s.
 export const maxDuration = 60;
